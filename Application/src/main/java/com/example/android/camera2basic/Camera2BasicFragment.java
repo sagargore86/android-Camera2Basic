@@ -48,6 +48,7 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
@@ -90,7 +91,7 @@ public class Camera2BasicFragment extends Fragment
      * Tag for the {@link Log}.
      */
     private static final String TAG = "Camera2BasicFragment";
-
+    private static final String DBG_TAG = "Camera2_DBG";
     /**
      * Camera state: Showing camera preview.
      */
@@ -443,6 +444,56 @@ public class Camera2BasicFragment extends Fragment
         }
     }
 
+    public void printCameraCapability(CameraManager manager) {
+        try {
+            for (String cameraId : manager.getCameraIdList()) {
+                CameraCharacteristics characteristics
+                        = manager.getCameraCharacteristics(cameraId);
+
+                StreamConfigurationMap map = characteristics.get(
+                        CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                if (map == null) {
+                    continue;
+                }
+                Log.e("DBG_TAG", "\ncameraId " + cameraId + " Facing: " +
+                        ((characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT) ? "FRONT" : "BACK"));
+                Range<Integer>[] range_hfr = map.getHighSpeedVideoFpsRanges();
+                if (range_hfr.length > 0)
+                    Log.e("DBG_TAG", "HFR video fps range[1]: "
+                            + range_hfr[0].getLower() + " " + range_hfr[0].getUpper()
+                            + " range[2]:" + range_hfr[1].getLower() + " " + range_hfr[1].getUpper()
+                            + " range[3]:" + range_hfr[2].getLower() + " " + range_hfr[2].getUpper()
+                            + " range[4]:" + range_hfr[3].getLower() + " " + range_hfr[3].getUpper());
+                else
+                    Log.e("DBG_TAG", "HFR not support on this camera");
+
+                Log.e("DBG_TAG", "Max Sensor output : " + Collections.max(
+                        Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+                        new CompareSizesByArea()).getWidth() + "x " +
+                        Collections.max(
+                                Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+                                new CompareSizesByArea()).getHeight());
+                Size hfr_sizes[] = map.getHighSpeedVideoSizes();
+                Log.e("DBG_TAG", " HFR sizes length: " + hfr_sizes.length);
+                if (hfr_sizes.length > 0)
+                   Log.e("DBG_TAG", "HFR sizes: " + hfr_sizes[0].toString());
+
+                for (Integer inputFormat : map.getInputFormats()) {
+                    Log.e("DBG_TAG" , "input format: " + inputFormat + " output formats supported (34: PRIVATE/35: YUV420 / 256: JPEG) : ");
+                    for (Integer i : map.getValidOutputFormatsForInput(inputFormat)) {
+                        Log.e("DBG_TAG", " " + i);
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            // Currently an NPE is thrown when the Camera2API is used but not supported on the
+            // device this code runs.
+            ErrorDialog.newInstance(getString(R.string.camera_error))
+                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+        }
+    }
     /**
      * Sets up member variables related to camera.
      *
@@ -453,6 +504,7 @@ public class Camera2BasicFragment extends Fragment
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
+            printCameraCapability(manager);
             for (String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
@@ -463,7 +515,7 @@ public class Camera2BasicFragment extends Fragment
                     continue;
                 }
 
-                StreamConfigurationMap map = characteristics.get(
+                    StreamConfigurationMap map = characteristics.get(
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (map == null) {
                     continue;

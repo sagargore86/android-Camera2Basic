@@ -18,6 +18,7 @@ package com.example.android.camera2basic;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.TextureView;
 
 /**
@@ -59,9 +60,12 @@ public class AutoFitTextureView extends TextureView {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        Log.e("DBG001", "Before Measured dim: " + widthMeasureSpec + " " + heightMeasureSpec);
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        Log.e("DBG001", String.format("middle Measured dim: %d %d", widthMeasureSpec, heightMeasureSpec));
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
+        Log.e("DBG001", "After Measured dim: " + width+ " " + height);
         if (0 == mRatioWidth || 0 == mRatioHeight) {
             setMeasuredDimension(width, height);
         } else {
